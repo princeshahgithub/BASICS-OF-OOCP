@@ -1,77 +1,42 @@
-const int di[4] = {1, -1, 0, 0};
-const int dj[4] = {0, 0, 1, -1};
+#include <vector>
+#include <queue>
+#include <tuple>
+using namespace std;
+
 class Solution {
 public:
-    static unsigned pack(unsigned h, unsigned i, unsigned j) {
-        return (h << 16) | (i << 8) | j;
-    }
+    int trapRainWater(vector<vector<int>>& heightMap) {
+        if (heightMap.empty() || heightMap[0].empty()) return 0;
+        int m = heightMap.size(), n = heightMap[0].size();
+        if (m < 3 || n < 3) return 0;
 
-    static array<int, 3> unpack(unsigned info) {
-        array<int, 3> ans;
-        ans[0] = info >> 16, ans[1] = (info >> 8) & 255, ans[2] = info & 255;
-        return ans;
-    }
+        using T = tuple<int,int,int>;
+        priority_queue<T, vector<T>, greater<T>> pq;
+        vector<vector<bool>> visited(m, vector<bool>(n, false));
 
-    static int trapRainWater(vector<vector<int>>& height) {
-        const int m = height.size(), n = height[0].size();
-        if (m <= 2 || n <= 2)
-            return 0; // No trapped water possible
-
-        vector<unsigned> boundary(2 * (m + n - 1));
-
-        // Add boundary cells  mark  visited
-        int idx = 0;
-        for (int i = 0; i < m; i++) {
-            boundary[idx++] = pack(height[i][0], i, 0);
-            boundary[idx++] = pack(height[i][n - 1], i, n - 1);
-            height[i][0] = height[i][n - 1] = -1; // visited
+        for (int i = 0; i < m; ++i) {
+            pq.emplace(heightMap[i][0], i, 0); visited[i][0] = true;
+            pq.emplace(heightMap[i][n-1], i, n-1); visited[i][n-1] = true;
+        }
+        for (int j = 0; j < n; ++j) {
+            if (!visited[0][j]) { pq.emplace(heightMap[0][j], 0, j); visited[0][j] = true; }
+            if (!visited[m-1][j]) { pq.emplace(heightMap[m-1][j], m-1, j); visited[m-1][j] = true; }
         }
 
-        for (int j = 1; j < n - 1; j++) {
-            boundary[idx++] = pack(height[0][j], 0, j);
-            boundary[idx++]=pack(height[m - 1][j], m - 1, j);
-            height[0][j] = height[m - 1][j] = -1; // visited
-        }
+        int res = 0;
+        int dirs[4][2] = {{1,0},{-1,0},{0,1},{0,-1}};
 
-        // Build a min-heap
-        make_heap(boundary.begin(), boundary.end(), greater<>());
-
-        int ans = 0, water_level = 0;
-
-        while (!boundary.empty()) {
-            // Extract the smallest element from the heap
-            pop_heap(boundary.begin(), boundary.end(), greater<>());
-            unsigned info = boundary.back();
-            boundary.pop_back();
-
-            auto [h, i, j] = unpack(info);
-            water_level = max(water_level, h);
-
-            // Process adjacent cell
-            for (int k = 0; k < 4; k++) {
-                int i0 = i + di[k], j0 = j + dj[k];
-                if (i0 < 0 || i0 >= m || j0 < 0 || j0 >= n ||
-                    height[i0][j0] == -1)
-                    continue;
-
-                int currH = height[i0][j0];
-                if (currH < water_level)
-                    ans += water_level - currH;
-
-                // Mark the cell as visited and push it to the heap
-                height[i0][j0] = -1;
-                boundary.push_back(pack(currH, i0, j0));
-                push_heap(boundary.begin(), boundary.end(), greater<>());
+        while (!pq.empty()) {
+            auto [h, r, c] = pq.top(); pq.pop();
+            for (auto &d : dirs) {
+                int nr = r + d[0], nc = c + d[1];
+                if (nr < 0 || nr >= m || nc < 0 || nc >= n || visited[nr][nc]) continue;
+                visited[nr][nc] = true;
+                int nh = heightMap[nr][nc];
+                if (nh < h) res += h - nh;
+                pq.emplace(max(nh, h), nr, nc);
             }
         }
-
-        return ans;
+        return res;
     }
 };
-
-auto init = []() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-    cout.tie(nullptr);
-    return 'c';
-}();
