@@ -8,6 +8,6 @@ public:
             else knew = k - 1;
             if(knew == 0)return true;
         }
-        return false;
+        return 0;
     }
 };
