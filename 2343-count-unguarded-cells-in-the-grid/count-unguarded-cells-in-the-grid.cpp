@@ -1,44 +1,41 @@
+char grid[100000];
 class Solution {
 public:
-    int countUnguarded(int m, int n, vector<vector<int>>& guards, vector<vector<int>>& walls) 
-    {
-        vector<vector<int>>mat(m, vector<int>(n));
-
-        for(auto vec : walls)
-            mat[vec[0]][vec[1]] = -2;
-        for(auto vec : guards)
-            mat[vec[0]][vec[1]] = -1;
-
-        for(auto vec : guards)
-        {
-            int x = vec[0], y = vec[1];
-            for(int i = y + 1; i < n; i++)
-            {
-                if(mat[x][i] == -2 or mat[x][i] == -1) break;
-                mat[x][i] = 1;
-            }
-            for(int i = y - 1; i >= 0; i--)
-            {
-                if(mat[x][i] == -2 or mat[x][i] == -1) break;
-                mat[x][i] = 1;
-            }
-            for(int i = x + 1; i < m; i++)
-            {
-                if(mat[i][y] == -2 or mat[i][y] == -1) break;
-                mat[i][y] = 1;
-            }
-            for(int i = x - 1; i >= 0; i--)
-            {
-                if(mat[i][y] == -2 or mat[i][y] == -1) break;
-                mat[i][y] = 1;
+    int m, n, comp;
+    int d[5] = {0, 1, 0, -1, 0};
+    inline int idx(int r, int c) { return r * n + c; }
+    inline void cross(int r, int c) {
+        for (int a = 0; a < 4; a++) {
+            int di = d[a], dj = d[a + 1];
+            for (int i = r + di, j = c + dj;; i += di, j += dj) {
+                int pos = idx(i, j);
+                if (i < 0 || i >= m || j < 0 || j >= n || grid[pos] == 'X')
+                    break;
+                comp -= (grid[pos] == ' ');
+                grid[pos] = 'V';
             }
         }
+    }
 
-        int ans = 0;
-        for(int i = 0; i < m; i++)
-            for(int j = 0; j < n; j++)
-                if(mat[i][j] == 0) ans += 1;
+    int countUnguarded(int m, int n, vector<vector<int>>& guards,
+                       vector<vector<int>>& walls) {
+        this->m = m, this->n = n;
+        comp = m * n;
+        memset(grid, ' ', m * n);
 
-        return ans;
+        for (auto& ij : walls) {
+            grid[idx(ij[0], ij[1])] = 'X';
+            comp--;
+        }
+
+        for (auto& ij : guards) {
+            grid[idx(ij[0], ij[1])] = 'X';
+            comp--;
+        }
+
+        for (auto& ij : guards) {
+            cross(ij[0], ij[1]);
+        }
+        return comp;
     }
 };
