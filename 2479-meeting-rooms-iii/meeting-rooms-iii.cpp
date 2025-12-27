@@ -1,45 +1,33 @@
 class Solution {
 public:
-    using info=pair<long long, int>;// (ending time, room number)
-    static int mostBooked(int n, vector<vector<int>>& meetings) {
+    int mostBooked(int n, vector<vector<int>>& meetings) {
         sort(meetings.begin(), meetings.end());
-        vector<int> count(n, 0);
-        vector<int> freeR(n);
-        iota(freeR.begin(), freeR.end(), 0);
-        priority_queue<int, vector<int>, greater<int>> freeRoom(freeR.begin(), freeR.end());
-        priority_queue<info, vector<info>, greater<info>> used;
 
-        for (auto& meet: meetings){
-            int room;
-            while (!used.empty() && used.top().first<=meet[0]){
-                room=used.top().second;
-                freeRoom.push(room);
-                used.pop();
+        priority_queue<int, vector<int>, greater<int>> free;
+        priority_queue<pair<long long,int>, vector<pair<long long,int>>, greater<>> busy;
+        vector<int> cnt(n);
+
+        for (int i = 0; i < n; i++) free.push(i);
+
+        for (auto &m : meetings) {
+            long long s = m[0], d = m[1] - m[0];
+
+            while (!busy.empty() && busy.top().first <= s) {
+                free.push(busy.top().second);
+                busy.pop();
             }
-            long long start, m_time=meet[1]-meet[0];
-            if (freeRoom.empty()){
-                tie(start, room)=used.top();
-                used.pop();
+
+            if (!free.empty()) {
+                int r = free.top(); free.pop();
+                busy.push({m[1], r});
+                cnt[r]++;
+            } else {
+                auto [t, r] = busy.top(); busy.pop();
+                busy.push({t + d, r});
+                cnt[r]++;
             }
-            else{
-                room=freeRoom.top();
-                start=meet[0];
-                freeRoom.pop();
-            }
-            count[room]++;
-            used.push({start+m_time, room});
         }
-        int idx=max_element(count.begin(), count.end())-count.begin();
 
-        return idx;
+        return max_element(cnt.begin(), cnt.end()) - cnt.begin();
     }
 };
-
-
-auto init = []()
-{ 
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-    cout.tie(0);
-    return 'c';
-}();
